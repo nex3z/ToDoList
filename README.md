@@ -11,3 +11,4 @@ make sure that everything runs correctly before changes are committed!
 
 # Credits
 
+- The app icon is made by [Freepik](http://www.flaticon.com/authors/freepik) from [www.flaticon.com](www.flaticon.com).
