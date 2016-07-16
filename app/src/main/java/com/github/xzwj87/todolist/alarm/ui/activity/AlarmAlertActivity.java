@@ -9,11 +9,14 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.Message;
+import android.preference.PreferenceManager;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
@@ -64,6 +67,8 @@ public class AlarmAlertActivity extends Activity implements View.OnClickListener
     private String mScheduleTitle;
     private NotificationManager mNotificationMgr;
 
+    private SharedPreferences mSharePref;
+
     @Override
     public void onCreate(Bundle savedSate){
         super.onCreate(savedSate);
@@ -103,12 +108,17 @@ public class AlarmAlertActivity extends Activity implements View.OnClickListener
         mShakeDetector = new ShakeDetectService(this);
         mShakeDetector.setShakeListener(new ShakeListener());
 
+        mSharePref = PreferenceManager.getDefaultSharedPreferences(this);
+        String alarmDuration = mSharePref.getString(getResources().getString(R.string.setting_alarm_duration_key),
+                "90");
+        mAlarmDuration = Integer.valueOf(alarmDuration)*1000;
         /* start a new thread */
         mThread = new ServiceThread("ServicesThread");
         mThread.start();
         /* send a delayed message to do timer alarm */
         Message msg = mHandler.obtainMessage(EVENT_ALARM_TIME_UP, getEventName(EVENT_ALARM_TIME_UP));
         mHandler.sendMessageDelayed(msg, mAlarmDuration);
+
     }
 
     @Override
@@ -127,31 +137,10 @@ public class AlarmAlertActivity extends Activity implements View.OnClickListener
         }
     }
 
-    // should run in a different thread
-    public void startServices(){
-        Log.d(LOG_TAG, "startServices()");
-
-        /* playing music */
-        Intent intent = new Intent(this, AudioPlayerService.class);
-        startService(intent);
-        /* shake detecting */
-        mShakeDetector.start();
-    }
-
-    public void stopServices(){
-        Log.d(LOG_TAG,"stopServices()");
-
-        /* stop music */
-        Intent intent = new Intent(this,AudioPlayerService.class);
-        stopService(intent);
-        /* stop shake detecting */
-        mShakeDetector.stop();
-    }
-
     public String getEventName(int event){
         switch (event){
             case EVENT_USER_CLICK_CLOSE:
-                return "USER_CLICK_OK";
+                return "USER_CLICK_CLOSE";
             case EVENT_USER_CLICK_CANCEL:
                 return "USER_CLICK_CANCEL";
             case EVENT_USER_SHAKE:
@@ -277,7 +266,30 @@ public class AlarmAlertActivity extends Activity implements View.OnClickListener
             int notifyId = 1;
             mNotificationMgr = (NotificationManager)getApplicationContext()
                     .getSystemService(Context.NOTIFICATION_SERVICE);
-            mNotificationMgr.notify(notifyId,builder.build());
+            mNotificationMgr.notify(notifyId, builder.build());
+        }
+
+
+        // should run in a different thread
+        public void startServices(){
+            Log.d(LOG_TAG, "startServices()");
+
+        /* playing music */
+            Intent intent = new Intent(getApplicationContext(), AudioPlayerService.class);
+            startService(intent);
+
+        /* shake detecting */
+            mShakeDetector.start();
+        }
+
+        public void stopServices(){
+            Log.d(LOG_TAG, "stopServices()");
+
+        /* stop music */
+            Intent intent = new Intent(getApplicationContext(),AudioPlayerService.class);
+            stopService(intent);
+        /* stop shake detecting */
+            mShakeDetector.stop();
         }
 
     }
